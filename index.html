@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>宿屋リンクまとめ - Step 1.2a</title>
+  <style>body { margin: 0; background: #111; } canvas { display: block; margin: auto; }</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 512,
+  height: 320,
+  pixelArt: true,
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 0 }, debug: false }
+  },
+  scene: { preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+let player, cursors, map, tileset, layer, direction = 'down';
+
+function preload() {
+  this.load.image('tiles', 'tiles.png');
+  this.load.spritesheet('ghost', 'ghost.png', { frameWidth: 32, frameHeight: 32 });
+}
+
+function create() {
+  map = this.make.tilemap({ width: 16, height: 10, tileWidth: 32, tileHeight: 32 });
+  tileset = map.addTilesetImage('tiles');
+  layer = map.createBlankLayer('layer1', tileset);
+
+  // 簡易マップ：0 = 床, 1 = 壁, 2 = 窓, 3 = カウンター
+  const layout = [
+    [1,1,2,1,1,1,1,1,1,2,1,1,1,1,2,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,3,3,3,0,0,0,0,0,3,3,3,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  ];
+
+  for (let y = 0; y < layout.length; y++) {
+    for (let x = 0; x < layout[y].length; x++) {
+      map.putTileAt(layout[y][x], x, y, false, 'layer1');
+    }
+  }
+  layer.setCollision([1, 3]);
+
+  player = this.physics.add.sprite(32 * 8, 32 * 6, 'ghost', 0);
+  player.setCollideWorldBounds(true);
+  this.physics.add.collider(player, layer);
+
+  // アニメーション設定（縦4方向 × 各3フレーム）
+  this.anims.create({ key: 'down', frames: this.anims.generateFrameNumbers('ghost', { start: 0, end: 2 }), frameRate: 6, repeat: -1 });
+  this.anims.create({ key: 'left', frames: this.anims.generateFrameNumbers('ghost', { start: 3, end: 5 }), frameRate: 6, repeat: -1 });
+  this.anims.create({ key: 'right', frames: this.anims.generateFrameNumbers('ghost', { start: 6, end: 8 }), frameRate: 6, repeat: -1 });
+  this.anims.create({ key: 'up', frames: this.anims.generateFrameNumbers('ghost', { start: 9, end: 11 }), frameRate: 6, repeat: -1 });
+
+  cursors = this.input.keyboard.createCursorKeys();
+}
+
+function update() {
+  player.setVelocity(0);
+  let moving = false;
+
+  if (cursors.left.isDown) {
+    player.setVelocityX(-100); direction = 'left'; moving = true;
+  } else if (cursors.right.isDown) {
+    player.setVelocityX(100); direction = 'right'; moving = true;
+  } else if (cursors.up.isDown) {
+    player.setVelocityY(-100); direction = 'up'; moving = true;
+  } else if (cursors.down.isDown) {
+    player.setVelocityY(100); direction = 'down'; moving = true;
+  }
+
+  if (moving) {
+    player.anims.play(direction, true);
+  } else {
+    player.anims.stop();
+  }
+}
+</script>
+</body>
+</html>
